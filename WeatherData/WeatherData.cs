@@ -10,34 +10,25 @@ namespace WeatherData
         public string Location { get; set; }
         public double? Temperature { get; set; }
         public double? Humidity { get; set; }
-        public string MoldRisk
+        public double MoldRisk
         {
             get
             {
-                // Delat upp mögelrisken i tre nivåer baserat på temperatur och fuktighet
-                // Hög, måttlig och låg risk - hittade enkla riktlinjer på nätet
-
                 // Först lite felhantering
                 if (Temperature == null || Humidity == null)
                 {
-                    return "Okänd - otillräcklig data";        // Todo: Ska det vara på engelska? Hur är det i tabellen?
+                    return 0;
                 }
-                // High risk: T between 5–30°C and RH above 75%
-                if (Temperature >= 5 && Temperature <= 30 && Humidity > 75)
+                // Vid låg temp och luftfuktighet är risken liten/obetydlig
+                else if (Temperature < 10 || Humidity < 60)
                 {
-                    return "Hög";
+                    return 0;
                 }
-                //Medium risk: T between 5–30°C and RH between 65–75%
-                else if (Temperature >= 5 && Temperature <= 30 && Humidity >= 65 && Humidity <= 75)
-                {
-                    return "Måttlig";
-                }
-                // Low risk: Otherwise
+                // I annat fall - beräkna mögelrisken, avrundat
                 else
                 {
-                    return "Låg";
+                    return Math.Round((double)((Temperature - 10.0) * (Humidity / 100.0)), 2);
                 }
-
             }
         }
     }
