@@ -13,15 +13,15 @@ public class Program
 
     private static void Main(string[] args)
     {
-        bool menuBreaker = true;
+        bool breaker = true;
         try
         {
             WDDataAccess.InitializeData(filePath);
             do
             {
-                MainMenu(out bool breaker);
+                MainMenu(out breaker);
             }
-            while (menuBreaker);
+            while (breaker);
         }
         catch (Exception ex)
         {
@@ -33,18 +33,19 @@ public class Program
 
     private static void MainMenu(out bool breaker)
     {
+        breaker = true;
         WritePanel("WEATHER DATA", "#ffffff", "#0087ff");
 
         List<string> menuOptions = new List<string>
             {
                 "[#ffffff]Outside: Average temperature (search by date)[/]\n",
-                "[#ffffff]Outside: Sort from warmest to coldest day (average temp)[/]\n",
+                "[#ffffff]Outside: Sort from hottest to coldest day (average temp)[/]\n",
                 "[#ffffff]Outside: Sort from driest to most humid day (average humdity)[/]\n",
                 "[#ffffff]Outside: Sort from lowest to highest mold risk[/]\n\n",
                 "[#ffffff]Date of meteorological autumn[/]\n",
                 "[#ffffff]Date of meteorological winter [/]\n\n",
                 "[#ffffff]Inside: Average temperature (search by date)[/]\n",
-                "[#ffffff]Inside: Sort from warmest to coldest day (average temp)[/]\n",
+                "[#ffffff]Inside: Sort from hottest to coldest day (average temp)[/]\n",
                 "[#ffffff]Inside: Sort from driest to most humid day (average humdity)[/]\n",
                 "[#ffffff]Inside: Sort from lowest to highest mold risk[/]\n\n",
                 "[#ffffff]Finish and close[/]\n"
@@ -62,96 +63,79 @@ public class Program
         {
             case "Outside: Average temperature (search by date)":
                 {
-                    AverageTempDay("Ute");
+                    WritePanel("AVERAGE TEMP OUTSIDE", "#ffffff", "#0087ff");
+                    WDCalculate.AverageTempDay("Ute");
                     break;
                 }
 
-            case "Outside: Sort from warmest to coldest day (average temp)":
+            case "Outside: Sort from hottest to coldest day (average temp)":
                 {
+                    WritePanel("OUTSIDE - HOTTEST TO COLDEST", "#ffffff", "#0087ff");
+                    WDCalculate.SortHotToCold("Ute");
                     break;
                 }
             case "Outside: Sort from driest to most humid day (average humdity)":
                 {
+                    WritePanel("OUTISDE - DRIEST TO MOST HUMID", "#ffffff", "#0087ff");
+                    WDCalculate.SortDryToHumid("Ute");
                     break;
                 }
             case "Outside: Sort from lowest to highest mold risk":
                 {
+                    WritePanel("OUTSIDE - LOWEST TO HIGHEST MOLD RISK", "#ffffff", "#0087ff");
+                    WDCalculate.SortMoldRiskLowToHigh("Ute");
                     break;
                 }
             case "Date of meteorological autumn":
                 {
+                    WritePanel("METEOROLOGICAL AUTUMN", "#ffffff", "#0087ff");
+                    WDCalculate.MeteorologicalAutumn();
                     break;
                 }
             case "Date of meteorological winter":
                 {
+                    WritePanel("METEOROLOGICAL WINTER", "#ffffff", "#0087ff");
+                    WDCalculate.MeteorologicalWinter();
                     break;
                 }
             case "Inside: Average temperature (search by date)":
                 {
+                    WritePanel("AVERAGE TEMP INSIDE", "#ffffff", "#0087ff");
+                    WDCalculate.AverageTempDay("Inne");
                     break;
                 }
-            case "Inside: Sort from warmest to coldest day (average temp)":
+            case "Inside: Sort from hottest to coldest day (average temp)":
                 {
+                    WritePanel("INSIDE - HOTTEST TO COLDEST", "#ffffff", "#0087ff");
+                    WDCalculate.SortHotToCold("Inne");
                     break;
                 }
             case "Inside: Sort from driest to most humid day (average humdity)":
                 {
+                    WritePanel("INSIDE - DRIEST TO MOST HUMID", "#ffffff", "#0087ff");
+                    WDCalculate.SortDryToHumid("Inne");
                     break;
                 }
             case "Inside: Sort from lowest to highest mold risk":
                 {
+                    WritePanel("INSIDE - LOWEST TO HIGHEST MOLD RISK", "#ffffff", "#0087ff");
+                    WDCalculate.SortMoldRiskLowToHigh("Inne");
                     break;
                 }
             case "Finish and close":
                 {
                     AnsiConsole.Clear();
-                    WritePanel("THANK YOU FOR USING WEATHER DATA", "#00ff00", "#0087ff");
+                    WritePanel("THANK YOU FOR USING THE WEATHER DATA APP\n\nGOOD BYE!", "#ffffff", "#0087ff");
                     breaker = false;
                     break;
                 }
         }
+        AnsiConsole.Console.Input.ReadKey(false);
+        AnsiConsole.Clear();
     }
 
-    private static void AverageTempDay(string location)
-    {
-        DateTime? date = SelectDate();
-        if (date == null)
-        {
-            Console.WriteLine("\nAn error has occured. Returning to main menu.");
-            return;
-        }
-
-        using (var db = new WeatherDataContext)
-        {
-
-        }
-
-    }
-
-    private static DateTime? SelectDate()
-    {
-        bool isValid = false;
-        DateTime? date = null;      // om null skickas tillbaka - nåt har gått fel
-        do
-        {
-            string dateInput = AnsiConsole.Ask<string>("\nEnter a date between 2016-10-01 and 2016-11-30 (yyyymmdd): ");
-            date = DateTime.ParseExact(dateInput, "yyyyMMdd", CultureInfo.InvariantCulture);
-
-            // Validera datumet som användaren skriver in
-            if (date < new DateTime(2016, 10, 1) || date > new DateTime(2016, 11, 30))
-            {
-                Console.WriteLine("Invalid date. Please enter a date between 2016-10-01 and 2016-11-30.");
-            }
-            else
-            {
-                isValid = true;
-                return date;
-            }
-        }
-        while (!isValid);
-        return date;
-    }
-    // Metod från Prague Parking
+   
+    // Metod som skapar paneler (från Prague Parking)
     private static void WritePanel(string panelText, string textColor, string borderColor)
     {
         Panel menuPanel = new Panel(new Markup($"[{textColor} bold]{panelText}[/]").Centered());
