@@ -277,5 +277,132 @@ namespace WeatherData
                 }
             }
         }
+        // Metod för att sortera på hur länge balkongdörren är öppen
+        public static void SortBalconyDoorOpen()
+        {
+            using (var db = new WeatherDataContext())
+            {
+                // Hämta data där temperatur finns för både ute och inne vid samma tidpunkt
+                // och spara i lista - sorterad enligt tid
+                var dataList = db.WeatherDataTbl
+                                    .Where(w => w.Temperature.HasValue && !string.IsNullOrEmpty(w.Location))
+                                    .GroupBy(w => w.Date)                                                              // Nu behövs exakt tid - inte bara datum
+                                    .Where(g => g.Any(x => x.Location == "Inne") && g.Any(x => x.Location == "Ute"))   // Måste ha tempen både inne och ute samtidigt
+                                    .Select(g => new
+                                    {
+                                        GroupTime = g.First().Date,                                                     // Spara tiden
+                                        InsideTemp = g.First(w => w.Location == "Inne").Temperature.Value,              // Ta ut temperaturen inne
+                                        OutsideTemp = g.First(w => w.Location == "Ute").Temperature.Value,              // Ta ut temperaturen ute
+                                    })
+                                    .OrderBy(x => x.GroupTime)
+                                    .ToList();
+
+                // Felmeddelande om ingen data hittas
+                if (!dataList.Any())
+                {
+                    Console.WriteLine($"\nError! Failed to retrieve any temperature readings\nfrom both inside and outside at the same time.");
+                    return;
+                }
+
+                // Skapar en lista för att räkna hur många gånger dörren öppnas
+                var doorOpenCount = new List<DateTime>();
+
+                // Gå igenom listan och se när dörren öppnas
+                // --> när temperaturen inne går ner OCH temperaturen ute går upp
+                for (int i = 0; i < dataList.Count - 1; i++)
+                {
+                    var current = dataList[i];
+                    var next = dataList[i + 1];
+
+                    // Chansar lite att skillnaden borde bli mer än 0.25 grader när dörren öppnas
+                    if (Difference(current.InsideTemp, next.InsideTemp) < -0.25 && Difference(current.OutsideTemp, next.OutsideTemp) > 0.25)
+                    {
+                        doorOpenCount.Add(current.GroupTime);   // Lägger till när dörren öppnas
+                    }
+                    // TODO: Ta bort, struntar i när dörren stängs
+                    //// Kollar om dörren stängs - men bara om den är öppen
+                    //// Om dörren stängs - sparar tiden den var öppen i listan och nollställer doorOpened
+                    //if (doorOpened != null && current.InsideTemp < next.InsideTemp && Difference(current.OutsideTemp, next.OutsideTemp) < -0.25)
+                    //{
+                    //    doorOpenCount.Add((doorOpened.Value, current.GroupTime));
+                    //    doorOpened = null;
+                    //}
+                }
+
+                // Använder listan med när dörren öppnas och stängs för att räkta ut total tid dörren är öppen
+                var countPerDay = doorOpenCount
+                                    .GroupBy(d => d.Date.Date)               // Nu vill vi gruppera per dag igen
+                                    .Select(g => new
+                                    {
+                                        GroupDate = g.Key,
+                                        OpenCount = g.Count()                 // Räkna ut hur många gånger dörren öppnats per dag
+                                    })
+                                    .OrderByDescending(d => d.OpenCount)                               // Sortera från flest till minst gånger dörren öppnats
+                                    .ThenBy(d => d.GroupDate)                                          // Sortera kronologiskt om dörren öppnades lika många gånger vissa dagar
+                                    .ToList();
+
+                // Slutligen - skriv ut resultatet
+                Console.WriteLine($"\nDays when the balcony door was open");
+                Console.WriteLine($"-----------------------------------\n\n");
+                foreach (var day in countPerDay)
+                {
+                    // Konverterar från minuter till TimeSpan för snyggare utskrift (med timmar och minuter)
+                    //var timeSpan = TimeSpan.FromMinutes(day.TotalOpenMinutes);
+                    //Console.WriteLine($"\nDate: {day.GroupDate:yyyy-MM-dd}, Balcony door open: {timeSpan.Hours}h {timeSpan.Minutes}min");
+                    Console.WriteLine($"\nDate: {day.GroupDate:yyyy-MM-dd}, Balcony door open: {day.OpenCount} times");
+                }
+            }
+        }
+        // Liten metod som räknar ut skillnaden mellan två värden (temperaturer)
+        private static double Difference(double currentTemp, double nextTemp)
+        {
+            return nextTemp - currentTemp;      // Positivt om tempen går upp, negativt om den går ner, noll om ingen skillnad
+        }
+
+        // Metod för att sortera på temperaturskillnad inne och ute
+        // Sorterar alla dagar enligt temperaturskillnad (medeltemperatur per dag)
+        // Skriver ut alla dagar, och när det skiljt sig mest och minst
+        public static void SortTemperatureDiff()
+        {
+            using (var db = new WeatherDataContext())
+            {
+                var data = db.WeatherDataTbl
+                                    .Where(w => w.Temperature.HasValue)
+                                    .GroupBy(w => w.Date.Date)              // gruppera enligt datum
+                                    .Select(g => new
+                                    {
+                                        GroupDate = g.First().Date.Date,                                                            // Ta ut datumet, utan tid
+                                        AvgInsideTemp = g.Where(w => w.Location == "Inne").Average(w => w.Temperature.Value),       // Räkna ut medeltemperaturer per dag
+                                        AvgOutsideTemp = g.Where(w => w.Location == "Ute").Average(w => w.Temperature.Value)
+                                    })
+                                    .Select(d => new
+                                    {
+                                        GroupDate = d.GroupDate,
+                                        TempDifference = Math.Abs(d.AvgInsideTemp - d.AvgOutsideTemp)       // Räkna ut temperaturskillnaden
+                                    })
+                                    .OrderByDescending(t => t.TempDifference)                               // Sortera från störst till minst temperaturskillnad
+                                    .ToList();                                                              // Spara i lista
+
+                // Felmeddelande om ingen data hittas - listan är tom
+                if (!data.Any())
+                {
+                    Console.WriteLine($"\nError! Could not determine temperature difference for any days.");
+                }
+
+                // Skriv ut när tempen skiljt sig mest och minst - första och sista elementen i listan
+                Console.WriteLine($"\nPlease note: Average temperature per day (inside and outside) was used\n");
+                Console.WriteLine($"----------------------------------------------");
+                Console.WriteLine($"\nGreatest difference: {data.First().TempDifference:F2} °C, Date: {data.First().GroupDate:yyyy-MM-dd}");
+                Console.WriteLine($"\nSmallest difference: {data.Last().TempDifference:F2} °C, Date: {data.Last().GroupDate:yyyy-MM-dd}\n");
+                Console.WriteLine($"----------------------------------------------\n\n");
+                Console.WriteLine("All days sorted from greatest to smallest difference:\n");
+
+                // Skriv ut alla dagar i listan
+                foreach (var day in data)
+                {
+                    Console.WriteLine($"\nDate: {day.GroupDate:yyyy-MM-dd}, Difference: {day.TempDifference:F2} °C");
+                }
+            }
+        }
     }
 }

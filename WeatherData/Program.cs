@@ -48,6 +48,8 @@ public class Program
                 "[#ffffff]Inside: Sort from hottest to coldest day (average temp)[/]\n",
                 "[#ffffff]Inside: Sort from driest to most humid day (average humdity)[/]\n",
                 "[#ffffff]Inside: Sort from lowest to highest mold risk[/]\n\n",
+                "[#ffffff]Extra: Sort by how long the balcony door is open[/]\n",
+                "[#ffffff]Extra: Sort by temperature difference[/]\n\n",
                 "[#ffffff]Finish and close[/]\n"
             };
 
@@ -122,6 +124,18 @@ public class Program
                     WDCalculate.SortMoldRiskLowToHigh("Inne");
                     break;
                 }
+            case "Extra: Sort by how long the balcony door is open":
+                {
+                    WritePanel("BALCONY DOOR OPEN\nLONGEST TO SHORTEST TIME PER DAY", "#ffffff", "#0087ff");
+                    WDCalculate.SortBalconyDoorOpen();
+                    break;
+                }
+            case "Extra: Sort by temperature difference":
+                {
+                    WritePanel("TEMPERATURE DIFFERENCE INSIDE AND OUTSIDE\n\nGREATEST TO SMALLEST DIFFERENCE", "#ffffff", "#0087ff");
+                    WDCalculate.SortTemperatureDiff();
+                    break;
+                }
             case "Finish and close":
                 {
                     AnsiConsole.Clear();
@@ -134,7 +148,7 @@ public class Program
         AnsiConsole.Clear();
     }
 
-   
+
     // Metod som skapar paneler (från Prague Parking)
     private static void WritePanel(string panelText, string textColor, string borderColor)
     {
