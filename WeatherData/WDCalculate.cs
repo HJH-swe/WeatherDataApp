@@ -12,7 +12,7 @@ namespace WeatherData
     // men det fick bli så här den här gången
     public class WDCalculate
     {
-        // Metod för att beräkna medeltemperaturen för en vald dag och plats
+        // Metod för att beräkna medeltemperaturen för vald dag och plats
         public static void AverageTempDay(string location)
         {
             DateTime? date = SelectDate();
@@ -278,13 +278,74 @@ namespace WeatherData
             }
         }
         // Metod för att sortera på hur länge balkongdörren är öppen
+        // Använder genomsnittliga temperaturskillnaden per dag (inne och ute) 
+        // och kollar när skillnaden är tydligt mindre --> då är dörren öppen
+        // Räknar hur många gånger per dag man kan anta att dörren är öppen
+        // --> en gång motsvarar en minut --> ger en uppskattning av hur många minuter dörren är öppen per dag
         public static void SortBalconyDoorOpen()
         {
             using (var db = new WeatherDataContext())
             {
-                // Hämta data där temperatur finns för både ute och inne vid samma tidpunkt
-                // och spara i lista - sorterad enligt tid
-                var dataList = db.WeatherDataTbl
+                // Först ska vi kolla genomsnittliga temperaturskillnaden per dag
+                // Samma kod som i SortTemperatureDiff-metoden
+                var tempDiffAvg = db.WeatherDataTbl
+                                    .Where(w => w.Temperature.HasValue && !string.IsNullOrEmpty(w.Location))
+                                    .GroupBy(w => w.Date.Date)                                      // gruppera per dag
+                                    .Select(g => new
+                                    {
+                                        GroupDate = g.First().Date.Date,                                                            
+                                        AvgInsideTemp = g.Where(w => w.Location == "Inne").Average(w => w.Temperature.Value),       // Räkna ut medeltemperaturer per dag
+                                        AvgOutsideTemp = g.Where(w => w.Location == "Ute").Average(w => w.Temperature.Value)        // inne och ute
+                                    })
+                                    .Select(d => new
+                                    {
+                                        GroupDate = d.GroupDate,
+                                        TempDifference = Math.Abs(d.AvgInsideTemp - d.AvgOutsideTemp)       // Räkna ut temperaturskillnaden, genomsnitt per dag
+                                    })
+                                    .ToList();
+
+                // Sen ska vi kolla när temp-skillnaden varje minut där vi kan
+                var tempDiffPerMinute = db.WeatherDataTbl
+                                      .Where(w => w.Temperature.HasValue && (w.Location == "Inne" || w.Location == "Ute"))    // Måste se till att temp. och plats finns
+                                      .GroupBy(w => w.Date.Date)                                                              // Gruppera per dag igen
+                                      .Select(g => new                                                                        // Dagarna blir nu nya objekt
+                                      {
+                                          Date = g.Key,
+                                          DiffPerMinute = g                                                                     
+                                              .GroupBy(x => x.Date)                                                           // Gruppera per exakt tidpunkt
+                                              .Where(t => t.Count() == 2)                                                     // Där vi har mätningar för både inne och ute
+                                              .Select(t => Math.Abs(
+                                                  t.First(x => x.Location == "Inne").Temperature.Value -
+                                                  t.First(x => x.Location == "Ute").Temperature.Value
+                                                  ))
+                                      })
+                                      .ToList();
+
+                // När vi har båda listorna kan vi jämföra dem
+                var comparison = tempDiffAvg
+                                 .Join(tempDiffPerMinute,
+                                       avg => avg.GroupDate,
+                                       perMin => perMin.Date,
+                                       (avg, perMin) => new
+                                       {
+                                           Date = avg.GroupDate,
+                                           AvgDiff = avg.TempDifference,
+                                           OpenMinutes = perMin.DiffPerMinute.Count(diff => diff < avg.TempDifference - 1.0) // threshold logic
+                                       })
+                                 .OrderByDescending(x => x.OpenMinutes)
+                                 .ToList();
+
+                foreach (var day in comparison)
+                {
+                    Console.WriteLine($"Date: {day.Date:yyyy-MM-dd}, AvgDiff: {day.AvgDiff:F1}°C, Estimated open: {day.OpenMinutes} min");
+                }
+
+            }
+
+            // TA BORT
+            // Hämta data där temperatur finns för både ute och inne vid samma tidpunkt
+            // och spara i lista - sorterad enligt tid
+            var dataList = db.WeatherDataTbl
                                     .Where(w => w.Temperature.HasValue && !string.IsNullOrEmpty(w.Location))
                                     .GroupBy(w => w.Date)                                                              // Nu behövs exakt tid - inte bara datum
                                     .Where(g => g.Any(x => x.Location == "Inne") && g.Any(x => x.Location == "Ute"))   // Måste ha tempen både inne och ute samtidigt
@@ -329,7 +390,7 @@ namespace WeatherData
                     //}
                 }
 
-                // Använder listan med när dörren öppnas och stängs för att räkta ut total tid dörren är öppen
+                // Använder listan med när dörren öppnas för att räkta ut total tid dörren är öppen
                 var countPerDay = doorOpenCount
                                     .GroupBy(d => d.Date.Date)               // Nu vill vi gruppera per dag igen
                                     .Select(g => new
