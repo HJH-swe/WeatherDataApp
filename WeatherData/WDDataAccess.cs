@@ -12,7 +12,7 @@ namespace WeatherData
     {
         public static void InitializeData(string filePath)
         {
-            // Kolla först om filen finns
+            // Kolla först om filen finns - felmeddelande om den inte hittas
             if (!File.Exists(filePath))
             {
                 throw new FileNotFoundException("Filen kunde inte hittas.", filePath);
@@ -46,13 +46,12 @@ namespace WeatherData
                 {
                     db.Database.EnsureCreated();
 
-                    //Om det inte finns data i tabellen - fylla på från listan
+                    //Om det inte finns data i tabellen - fylla på från listan och spara
                     if (!db.WeatherDataTbl.Any())
                     {
                         db.WeatherDataTbl.AddRange(dataList);
                         db.SaveChanges();
                     }
-                    // Console.WriteLine($"Rader i databasen: {db.WeatherDataTbl.Count()}");
                 }
             }
             catch (Exception ex)

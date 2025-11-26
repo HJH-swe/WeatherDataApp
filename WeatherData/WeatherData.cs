@@ -10,6 +10,8 @@ namespace WeatherData
         public string Location { get; set; }
         public double? Temperature { get; set; }
         public double? Humidity { get; set; }
+
+        // En beräknad property som inte finns i csv-filen
         public double MoldRisk
         {
             get

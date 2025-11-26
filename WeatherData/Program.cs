@@ -25,7 +25,7 @@ public class Program
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Oväntat fel!");
+            Console.WriteLine("An unexpected error has occurred!");
             Console.WriteLine(ex.Message);
             throw;
         }
