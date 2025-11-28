@@ -1,11 +1,12 @@
-﻿using Spectre.Console;
+﻿using DataAccess;
+using Spectre.Console;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using WeatherData;
+using WeatherData.UI;
 
 public class Program
 {
@@ -66,74 +67,74 @@ public class Program
             case "Outside: Average temperature (search by date)":
                 {
                     WritePanel("AVERAGE TEMP OUTSIDE", "#ffffff", "#0087ff");
-                    WDCalculate.AverageTempDay("Ute");
+                    ConsoleUI.UIAverageTempDay("Ute");
                     break;
                 }
 
             case "Outside: Sort from hottest to coldest day (average temp)":
                 {
                     WritePanel("OUTSIDE - HOTTEST TO COLDEST", "#ffffff", "#0087ff");
-                    WDCalculate.SortHotToCold("Ute");
+                    ConsoleUI.UISortHotToCold("Ute");
                     break;
                 }
             case "Outside: Sort from driest to most humid day (average humdity)":
                 {
                     WritePanel("OUTISDE - DRIEST TO MOST HUMID", "#ffffff", "#0087ff");
-                    WDCalculate.SortDryToHumid("Ute");
+                    ConsoleUI.UISortDryToHumid("Ute");
                     break;
                 }
             case "Outside: Sort from lowest to highest mold risk":
                 {
                     WritePanel("OUTSIDE - LOWEST TO HIGHEST MOLD RISK", "#ffffff", "#0087ff");
-                    WDCalculate.SortMoldRiskLowToHigh("Ute");
+                    ConsoleUI.UISortMoldRisk("Ute");
                     break;
                 }
             case "Date of meteorological autumn":
                 {
                     WritePanel("METEOROLOGICAL AUTUMN", "#ffffff", "#0087ff");
-                    WDCalculate.MeteorologicalAutumn();
+                    ConsoleUI.UIMeteorologicalSeason("autumn");
                     break;
                 }
             case "Date of meteorological winter":
                 {
                     WritePanel("METEOROLOGICAL WINTER", "#ffffff", "#0087ff");
-                    WDCalculate.MeteorologicalWinter();
+                    ConsoleUI.UIMeteorologicalSeason("winter");
                     break;
                 }
             case "Inside: Average temperature (search by date)":
                 {
                     WritePanel("AVERAGE TEMP INSIDE", "#ffffff", "#0087ff");
-                    WDCalculate.AverageTempDay("Inne");
+                    ConsoleUI.UIAverageTempDay("Inne");
                     break;
                 }
             case "Inside: Sort from hottest to coldest day (average temp)":
                 {
                     WritePanel("INSIDE - HOTTEST TO COLDEST", "#ffffff", "#0087ff");
-                    WDCalculate.SortHotToCold("Inne");
+                    ConsoleUI.UISortHotToCold("Inne");
                     break;
                 }
             case "Inside: Sort from driest to most humid day (average humdity)":
                 {
                     WritePanel("INSIDE - DRIEST TO MOST HUMID", "#ffffff", "#0087ff");
-                    WDCalculate.SortDryToHumid("Inne");
+                    ConsoleUI.UISortDryToHumid("Inne");
                     break;
                 }
             case "Inside: Sort from lowest to highest mold risk":
                 {
                     WritePanel("INSIDE - LOWEST TO HIGHEST MOLD RISK", "#ffffff", "#0087ff");
-                    WDCalculate.SortMoldRiskLowToHigh("Inne");
+                    ConsoleUI.UISortMoldRisk("Inne");
                     break;
                 }
             case "Extra: Sort by how long the balcony door is open":
                 {
                     WritePanel("BALCONY DOOR OPEN\nLONGEST TO SHORTEST TIME PER DAY", "#ffffff", "#0087ff");
-                    WDCalculate.SortBalconyDoorOpen();
+                    ConsoleUI.UISortBalconyDoor();
                     break;
                 }
             case "Extra: Sort by temperature difference":
                 {
                     WritePanel("TEMPERATURE DIFFERENCE INSIDE AND OUTSIDE\n\nGREATEST TO SMALLEST DIFFERENCE", "#ffffff", "#0087ff");
-                    WDCalculate.SortTemperatureDiff();
+                    ConsoleUI.UISortTemperatureDiff();
                     break;
                 }
             case "Finish and close":

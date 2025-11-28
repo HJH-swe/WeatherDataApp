@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace WeatherData
+namespace Models
 {
+
     public class WeatherData
     {
         // Properties som matchar tabellens kolumner

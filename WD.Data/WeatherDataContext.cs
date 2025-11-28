@@ -1,9 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Models;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace WeatherData
+namespace DataAccess
 {
     // Sätter upp Contextklassen som i inspelade föreläsningen
     public class WeatherDataContext : DbContext

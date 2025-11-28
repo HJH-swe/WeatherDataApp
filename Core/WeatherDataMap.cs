@@ -3,7 +3,7 @@ using CsvHelper.Configuration;
 using CsvHelper.TypeConversion;
 using System.Globalization;
 
-namespace WeatherData
+namespace Models
 {
     // Hittade kod för mapping properties i CsvHelper-dokumentationen
     public sealed class WeatherDataMap : ClassMap<WeatherData>

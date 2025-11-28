@@ -1,31 +1,23 @@
-﻿using Spectre.Console;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using Models;
 
-namespace WeatherData
+
+namespace DataAccess
 {
-    // En klass med metoder för alla beräkningar och utskrifter
-    // Hade egentligen varit snyggast att bara ha beräkningar här och utskrifter i Program.cs
-    // men det fick bli så här den här gången
+
+    // En klass med metoder för alla beräkningar 
     public class WDCalculate
     {
         // Metod för att beräkna medeltemperaturen för vald dag och plats
-        public static void AverageTempDay(string location)
+        public static string AverageTempDay(string location, DateTime? date)
         {
-            DateTime? date = SelectDate();
-            if (date == null)
-            {
-                Console.WriteLine("\nAn error has occured. Returning to main menu.");
-                return;
-            }
-
             using (var db = new WeatherDataContext())
             {
                 var data = db.WeatherDataTbl
-                                    .Where(w => w.Date >= date.Value.Date       // .Value används eftersom date kan vara null
+                                    .Where(w => w.Date >= date.Value.Date       // .Value efter date kan tekniskt sett vara null
                                     && w.Date < date.Value.Date.AddDays(1)      // .Date används för att strunta i den exakta tiden
                                     && w.Location == location
                                     && w.Temperature.HasValue);
@@ -33,42 +25,18 @@ namespace WeatherData
                 // Om ingen data hittas för vald datum och plats
                 if (!data.Any())
                 {
-                    Console.WriteLine($"\nNo data found for location \"{location}\" on {date}.");
+                    return $"\nNo data found for location \"{location}\" on {date}.";
                 }
-                // Annars, beräkna och visa medeltemperaturen
+                // Annars, beräkna medeltemperaturen
                 else
                 {
                     double avgTemp = data.Average(w => w.Temperature.Value);
-                    Console.WriteLine($"\nAverage temperature for \"{location}\" on {date:yyyy-MM-dd}: {avgTemp:F2} °C");
+                    return $"\nAverage temperature for \"{location}\" on {date:yyyy-MM-dd}: {avgTemp:F2} °C";
                 }
             }
-        }
-        // Metod för att validera användarinput av datum
-        public static DateTime? SelectDate()
-        {
-            bool isValid = false;
-            DateTime? date = null;      // Om null skickas tillbaka - då har nåt gått fel
-            do
-            {
-                string dateInput = AnsiConsole.Ask<string>("\nEnter a date between 2016-10-01 and 2016-11-30 (yyyymmdd): ");
-                date = DateTime.ParseExact(dateInput, "yyyyMMdd", CultureInfo.InvariantCulture);
-
-                // Validera datumet som användaren skriver in
-                if (date < new DateTime(2016, 10, 1) || date > new DateTime(2016, 11, 30))
-                {
-                    Console.WriteLine("\n\nInvalid date. Please enter a date between 2016-10-01 and 2016-11-30.\n");
-                }
-                else
-                {
-                    isValid = true;
-                    return date;
-                }
-            }
-            while (!isValid);
-            return date;
         }
         // Metod för att sortera från varmast till kallast (enligt dagens medeltemp) för en vald plats 
-        public static void SortHotToCold(string location)
+        public static List<string> SortHotToCold(string location)
         {
             using (var db = new WeatherDataContext())
             {
@@ -83,24 +51,27 @@ namespace WeatherData
                                     .OrderByDescending(t => t.AverageTemp)                         // Sortera enligt AverageTemp, varmt till kallt
                                     .ToList();
 
-                // Felmeddelande om ingen data hittas
+                // Skapar listan att returnera
+                var stringList = new List<string>();
+                // Resturnera felmeddelande om ingen data hittas
                 if (!data.Any())
                 {
-                    Console.WriteLine($"\nError! No data found for \"{location}\".");
+                    stringList.Add($"\nError! No data found for \"{location}\".");
                 }
-                // Annars, visa medeltemperaturen för varje dag
+                // Annars, lägg till medeltemperaturen för varje dag
                 else
                 {
                     foreach (var row in data)
                     {
-                        Console.WriteLine($"\nDate: {row.GroupDate:yyyy-MM-dd}, Average temperature: {row.AverageTemp:F2} °C");
+                        stringList.Add($"\nDate: {row.GroupDate:yyyy-MM-dd}, Average temperature: {row.AverageTemp:F2} °C");
                     }
                 }
+                return stringList;
             }
         }
         // Metod för att sortera från torrast till fuktigast (enligt dagens medel) för en vald plats
         // Väldigt lik SortHotToCold-metoden ovan
-        public static void SortDryToHumid(string location)
+        public static List<string> SortDryToHumid(string location)
         {
             using (var db = new WeatherDataContext())
             {
@@ -115,25 +86,28 @@ namespace WeatherData
                                     .OrderBy(h => h.AverageHumidity)                               // Sortera enligt AverageHumidity, torrt till fuktigt
                                     .ToList();
 
-                // Felmeddelande om ingen data hittas
+                // Skapar listan att returnera
+                var stringList = new List<string>();
+                // Returnera felmeddelande om ingen data hittas
                 if (!data.Any())
                 {
-                    Console.WriteLine($"\nError! No data found for \"{location}\".");
+                    stringList.Add($"\nError! No data found for \"{location}\".");
                 }
-                // Annars, visa medelluftfuktigheten för varje dag
+                // Annars, lägg till medelluftfuktigheten för varje dag
                 else
                 {
                     foreach (var row in data)
                     {
-                        Console.WriteLine($"\nDate: {row.GroupDate:yyyy-MM-dd}, Average humidity: {row.AverageHumidity:F2} %");
+                        stringList.Add($"\nDate: {row.GroupDate:yyyy-MM-dd}, Average humidity: {row.AverageHumidity:F2} %");
                     }
                 }
+                return stringList;
             }
         }
         // Metod för att sortera från minst till störst risk för mögel (enligt dagens medel) för en vald plats
         // Använder medelvärdet för varje dag - som de flesta andra sorteringsmetoderna -
         // men metoden är lite annorlunda eftersom MoldRisk inte är en kolumn i tabellen.
-        public static void SortMoldRiskLowToHigh(string location)
+        public static List<string> SortMoldRiskLowToHigh(string location)
         {
             using (var db = new WeatherDataContext())
             {
@@ -156,23 +130,27 @@ namespace WeatherData
                            .ThenBy(m => m.GroupDate)                                      // Sen sortera på datum
                            .ToList();
 
+                // Skapar listan att returnera
+                var stringList = new List<string>();
+
                 // Felmeddelande om ingen data hittas
                 if (!data.Any())
                 {
-                    Console.WriteLine($"\nError! No data found for \"{location}\".");
+                    stringList.Add($"\nError! No data found for \"{location}\".");
                 }
-                // Annars, visa mögelrisken för varje dag
+                // Annars, lägg till mögelrisken för varje dag
                 else
                 {
                     foreach (var row in data)
                     {
-                        Console.WriteLine($"\nDate: {row.GroupDate:yyyy-MM-dd}, Mold risk: {row.AverageMoldRisk:F2}");
+                        stringList.Add($"\nDate: {row.GroupDate:yyyy-MM-dd}, Mold risk: {row.AverageMoldRisk:F2}");
                     }
                 }
+                return stringList;
             }
         }
         // Metod som visar meteorologisk höst
-        public static void MeteorologicalAutumn()
+        public static string MeteorologicalAutumn()
         {
             using (var db = new WeatherDataContext())
             {
@@ -214,19 +192,19 @@ namespace WeatherData
                 // Skriv ut resultatet
                 if (autumnStartDate.HasValue)
                 {
-                    Console.WriteLine($"\nMeteorological autumn started on: {autumnStartDate:yyyy-MM-dd}");
+                    return $"\nMeteorological autumn started on: {autumnStartDate:yyyy-MM-dd}";
                 }
                 else
                 {
-                    Console.WriteLine("\nThe date for meteorological autumn could not be determined.");
-                    Console.WriteLine("\nEither meteorological autumn did not start during the provided time frame");
-                    Console.WriteLine("or the data was insufficient.");
+                    return "\nThe date for meteorological autumn could not be determined." +
+                           "\n\nEither meteorological autumn did not start during the provided time frame" +
+                           "\nor the data was insufficient.";
                 }
             }
         }
         // Metod som visar meteorologisk vinter
         // I princip likadan som metoden för att visa meteorologisk höst
-        public static void MeteorologicalWinter()
+        public static string MeteorologicalWinter()
         {
             using (var db = new WeatherDataContext())
             {
@@ -268,13 +246,13 @@ namespace WeatherData
                 // Skriver ut resultatet - ingen meteorologisk vinter hittas för 2016
                 if (autumnStartDate.HasValue)
                 {
-                    Console.WriteLine($"\nMeteorological winter started on: {autumnStartDate:yyyy-MM-dd}");
+                    return $"\nMeteorological winter started on: {autumnStartDate:yyyy-MM-dd}";
                 }
                 else
                 {
-                    Console.WriteLine("\nThe date for meteorological winter could not be determined.");
-                    Console.WriteLine("\nEither meteorological winter did not start during the provided time frame");
-                    Console.WriteLine("or the data was insufficient.");
+                    return "\nThe date for meteorological winter could not be determined." +
+                           "\n\nEither meteorological winter did not start during the provided time frame" +
+                           "\nor the data was insufficient.";
                 }
             }
         }
@@ -283,7 +261,7 @@ namespace WeatherData
         // och kollar när skillnaden är tydligt mindre --> då är dörren öppen.
         // Räknar hur många gånger per dag man kan anta att dörren är öppen
         // --> en gång motsvarar en minut --> ger en uppskattning av hur många minuter dörren är öppen per dag
-        public static void SortBalconyDoorOpen()
+        public static List<string> SortBalconyDoorOpen()
         {
             using (var db = new WeatherDataContext())
             {
@@ -338,19 +316,23 @@ namespace WeatherData
                                  .OrderByDescending(x => x.OpenMinutes)                                                        // Sortera från dörren öppen längst till kortast tid
                                  .ToList();                                                                                    // och spara i lista
 
-                // Slutligen - skriv ut resultatet
+                // Skapar listan att returnera
+                var stringList = new List<string>();
+
+                // Lägg till resultaten i listan
                 foreach (var day in comparison)
                 {
-                    Console.WriteLine($"\nDate: {day.Date:yyyy-MM-dd}, Door estimated open: {day.OpenMinutes} minutes");
+                    stringList.Add($"\nDate: {day.Date:yyyy-MM-dd}, Door estimated open: {day.OpenMinutes} minutes");
                 }
 
+                return stringList;
             }
         }
 
         // Metod för att sortera på temperaturskillnad inne och ute
         // Sorterar alla dagar enligt temperaturskillnad (medeltemperatur per dag)
         // Skriver ut alla dagar, och när det skiljt sig mest och minst
-        public static void SortTemperatureDiff()
+        public static List<string> SortTemperatureDiff()
         {
             using (var db = new WeatherDataContext())
             {
@@ -371,25 +353,23 @@ namespace WeatherData
                                     .OrderByDescending(t => t.TempDifference)                               // Sortera från störst till minst temperaturskillnad
                                     .ToList();                                                              // Spara i lista
 
+                // Skapar listan att returnera
+                var stringList = new List<string>();
+
                 // Felmeddelande om ingen data hittas - listan är tom
                 if (!data.Any())
                 {
-                    Console.WriteLine($"\nError! Could not determine temperature difference for any days.");
+                    stringList.Add($"\nError! Could not determine temperature difference for any days.");
                 }
-
-                // Skriv ut när tempen skiljt sig mest och minst - första och sista elementen i listan
-                Console.WriteLine($"\nPlease note: The method uses average temperature per day (inside and outside)\n");
-                Console.WriteLine($"-----------------------------------------------");
-                Console.WriteLine($"\nGreatest difference: {data.First().TempDifference:F2} °C, Date: {data.First().GroupDate:yyyy-MM-dd}");
-                Console.WriteLine($"\nSmallest difference: {data.Last().TempDifference:F2} °C, Date: {data.Last().GroupDate:yyyy-MM-dd}\n");
-                Console.WriteLine($"-----------------------------------------------\n\n");
-                Console.WriteLine("All days sorted from greatest to smallest difference:\n");
-
-                // Skriv ut alla dagar i listan
-                foreach (var day in data)
+                else
                 {
-                    Console.WriteLine($"\nDate: {day.GroupDate:yyyy-MM-dd}, Difference: {day.TempDifference:F2} °C");
+                    // Spara alla dagar i listan
+                    foreach (var day in data)
+                    {
+                        stringList.Add($"\nDate: {day.GroupDate:yyyy-MM-dd}, Difference: {day.TempDifference:F2} °C");
+                    }
                 }
+                return stringList;
             }
         }
     }
