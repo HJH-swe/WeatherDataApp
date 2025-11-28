@@ -1,5 +1,5 @@
 # WeatherDataApp
-Programmet är byggt så att csv-filen ligger i projektet WeatherData.<br>
+Programmet är byggt så att csv-filen ligger i projektet WeatherData.UI<br>
 Om den mot förmodan inte är där - lägg till csv-filen.
 
 Om ett fel inträffar när programmet ska ansluta till SQL Server:<br>
