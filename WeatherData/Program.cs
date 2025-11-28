@@ -1,11 +1,5 @@
 ﻿using DataAccess;
 using Spectre.Console;
-using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Diagnostics.Metrics;
-using System.Globalization;
-using System.Runtime.CompilerServices;
 using WeatherData.UI;
 
 public class Program

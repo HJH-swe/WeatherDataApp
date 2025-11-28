@@ -1,6 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-
-namespace Models
+﻿namespace Models
 {
 
     public class WeatherData

@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Text;
-using Models;
-
-
-namespace DataAccess
+﻿namespace DataAccess
 {
 
     // En klass med metoder för alla beräkningar 
